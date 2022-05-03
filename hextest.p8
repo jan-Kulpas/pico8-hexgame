@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 33
+version 34
 __lua__
 function _init()
 	poke(0x5f2d, 1)
@@ -28,20 +28,6 @@ function h2p(hex)
 	return {x=x,y=y}
 end
 
-function p2h(p)
-	local q=p.x/12
-	local r=p.y/14-q/2
-	
-	log("q  "..q)
-	log("r  "..r)
-	
-	if q%1>.4 and q%1<.55 then
-		return nil
-	end
-	
-	return {q=round(q),r=round(r)}
-end
-
 function _update60()
  if btn(➡️) then
  	cam_x+=1
@@ -58,7 +44,21 @@ function _update60()
  
  mx,my=stat(32),stat(33)
  cmx,cmy=cam_x+mx,cam_y+my
- hexp=p2h({x=cmx,y=cmy})
+end
+
+function draw_sel_hex()
+	local md,minhex=20000,-1
+	for i,h in pairs(hexes) do
+		local p=h2p(h)
+		log(p.x)
+		local d=dist(p.x,p.y,cmx,cmy)
+		log(d)
+		if d<md then
+			md,minhex=d,i
+		end
+	end
+	--log(md)
+	return minhex
 end
 
 function _draw()
@@ -72,16 +72,14 @@ function _draw()
   --pset(p.x,p.y,8)
 	end
 	
-	if(pget(cmx,cmy)!=12) then
-		if(hexp) then
-			local shp=h2p(hexp)
-			spr(3+flr(sin(t()*2)+1)*2,shp.x-7,shp.y-7,2,2)
-		end
-	end
+	te=h2p(hexes[30])
+	pset(te.x,te.y,8)
+ --spr(3+flr(sin(t()*2)+1)*2,hexp.x-7,hexp.y-7,2,2)
 	camera()
 	
 	spr(15,mx,my)
 	--debug
+	print(dist(te.x,te.y,cmx,cmy),5,11,1)
 	--print(cam_x,120,5,1)
 	--print(cam_y,120,11,1)
 	--print(mx,5,5,1)
@@ -96,6 +94,11 @@ end
 -->8
 function log(t,over)
 	printh(t,"log",over or false)
+end
+
+function dist(fx,fy,tx,ty)
+	--pythagorean distance between two points
+	return sqrt((fx-tx)^2+(fy-ty)^2)
 end
 
 __gfx__
