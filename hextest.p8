@@ -1,47 +1,54 @@
 pico-8 cartridge // http://www.pico-8.com
 version 35
 __lua__
---irish gauge hex grid test
---BY kULPAS
+--irish gauge hex grid test 
+--V0.0.8 BY kULPAS
 
 function _init()
-	poke(0x5f2d, 1)
-	log("kurwa",true)
-	debug={}
-	tile_tex={1,3,5,7}
-	--map_tiles=split("1001001110111100111000111","")
+	log("kurwa",true) -- log file init
+	poke(0x5f2d, 1) -- mouse enable
+
+	-- game data
 	map_tiles=split("000022210001132000001311101122220000211401312210000321111113123011011111112111002211111111211100121111132111200013121111111310002223111112133000111211111112100011111314221100002242200003300000","")
+	tile_tex={1,3,5,7}
 
-	hexes={}
-	cam_x,cam_y=0,0
-	mx,my=0,0
+	-- variables
+	debug={}
+	mx,my=0,0 -- mouse pos (global)
+	cam_x,cam_y=0,0 -- cam offset mouse pos (global)
+	hexes={} -- table of all hexes and their data
+		--q,r - axial coordinates
+		--s - sprite index
 
-	--hex array in axial coordinates
-	for i=1,4 do
+	-- create hexes[]
+	for i=1,4 do --foreach sprite
 		local map_i=1
-		for q=0,11 do
+		for q=0,11 do	--foreach q,r
 			for r=0,15 do
-				if(map_tiles[map_i]==i)add(hexes,{q=q,r=r-flr(q/2)-q%2,s=map_tiles[map_i]})
+				if map_tiles[map_i]==i then
+					add(hexes,{q=q,r=r-flr(q/2)-q%2,s=map_tiles[map_i]})
+				end
 				map_i+=1
 			end
 		end
 	end
-	debug[1]=#hexes
-	debug[2]=map_tiles[1]
+
 end
 
 function get_hexsel()
 	--finds hex closest to mouse
 	local mindist,minp,d,p=32767
+
 	for h in all(hexes) do
 		p=h2p(h)
-		--bit shift to prevent dist overflow
-		d=dist(cmx>>5,cmy>>5,p.x>>5,p.y>>5)
+		d=dist(cmx>>5,cmy>>5,p.x>>5,p.y>>5)--bit shift to prevent dist overflow
 		--prevent hex selection on edge
-		d=d<0.034 and d or 32767
+		d=d<0.034 and d or 32767 -- d=INTMAX if below radius
+
 		if d<mindist then
 			mindist,minp=d,p
 		end
+
 	end
 	return minp
 end
@@ -61,6 +68,7 @@ function _update60()
  	cam_y+=1
  end
 
+	-- update mouse pos and mouse cam pos
  mx,my=stat(32),stat(33)
  cmx,cmy=cam_x+mx,cam_y+my
 end
@@ -69,20 +77,19 @@ function _draw()
 	--clear screen
 	cls(12)
 
-	--draw hex grid
 	camera(cam_x,cam_y)
+
+	--draw hex grid
 	for h in all(hexes) do
 		local p=h2p(h)
  	spr(tile_tex[h.s],p.x-7,p.y-7,2,2)
-  --pset(p.x,p.y,8) --mark center
-		--print(h.q,p.x-3,p.y-2,2)
-		--print(h.r,p.x+3,p.y-2,1)
 	end
-
 
 	--draw selected hex
 	hexsel=get_hexsel()
- if(hexsel)spr(33+flr(sin(t()*2)+1)*2,hexsel.x-7,hexsel.y-7,2,2)
+ if hexsel then
+		spr(33+flr(sin(t()*2)+1)*2,hexsel.x-7,hexsel.y-7,2,2)
+	end
 
 	camera()
 
@@ -93,24 +100,6 @@ function _draw()
 end
 -->8
 --math
-
-function log(t,over)
-	printh(t,"log",over or false)
-end
-
-function do_debug()
-
-	draw_debug()
-end
-
-function draw_debug()
-	local y=8
-	for txt in all(debug) do
-		print(txt,5,y,8)
-		y+=6
-	end
-end
-
 function dist(fx,fy,tx,ty)
 	--pythagorean distance between two points
 	return (fx-tx)^2+(fy-ty)^2
@@ -126,6 +115,25 @@ function h2p(hex)
 	local y = hex.r*14+hex.q*7
 	return {x=x,y=y}
 end
+-->8
+--debug
+
+function log(t,over)
+	printh(t,"log",over or false)
+end
+
+function do_debug()
+	draw_debug()
+end
+
+function draw_debug()
+	local y=8
+	for txt in all(debug) do
+		print(txt,5,y,8)
+		y+=6
+	end
+end
+
 __gfx__
 00000000000ffffffffff000000ffffffffff000000111111111100000022222222220000000000000000000000000000000000000000000af00000001000000
 00000000000fbbbbbbbbf000000fbbbbbbbbf000000133333333100000022222222220000000000000000000000000000000000000000000f800000017100000
