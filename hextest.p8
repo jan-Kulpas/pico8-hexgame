@@ -1,15 +1,16 @@
 pico-8 cartridge // http://www.pico-8.com
-version 34
+version 35
 __lua__
 function _init()
 	poke(0x5f2d, 1)
 	log("kurwa",true)
+	debug={}
 
-	
+
 	hexes={}
 	cam_x,cam_y=0,0
 	mx,my=0,0
-	
+
 	--hex array in axial coordinates
 	for q=0,20 do
 		for r=0,10 do
@@ -28,7 +29,24 @@ function h2p(hex)
 	return {x=x,y=y}
 end
 
+function get_hexp()
+	--finds hex closest to mouse
+	local mindist,minp,d,p=32767
+	for h in all(hexes) do
+		p=h2p(h)
+		--bit shift to prevent dist overflow
+		d=dist(cmx>>5,cmy>>5,p.x>>5,p.y>>5)
+		--prevent hex selection on edge
+		d=d<0.034 and d or 32767
+		if d<mindist then
+			mindist,minp=d,p
+		end
+	end
+	return minp
+end
+
 function _update60()
+	--move camera with arrows
  if btn(➡️) then
  	cam_x+=1
  end
@@ -41,64 +59,55 @@ function _update60()
  if btn(⬇️) then
  	cam_y+=1
  end
- 
+
  mx,my=stat(32),stat(33)
  cmx,cmy=cam_x+mx,cam_y+my
 end
 
-function draw_sel_hex()
-	local md,minhex=20000,-1
-	for i,h in pairs(hexes) do
-		local p=h2p(h)
-		log(p.x)
-		local d=dist(p.x,p.y,cmx,cmy)
-		log(d)
-		if d<md then
-			md,minhex=d,i
-		end
-	end
-	--log(md)
-	return minhex
-end
-
 function _draw()
+	--clear screen
 	cls(12)
-	
-	--hex grid
+
+	--draw hex grid
 	camera(cam_x,cam_y)
 	for h in all(hexes) do
 		local p=h2p(h)
  	spr(1,p.x-7,p.y-7,2,2)
   --pset(p.x,p.y,8)
 	end
-	
-	te=h2p(hexes[30])
-	pset(te.x,te.y,8)
- --spr(3+flr(sin(t()*2)+1)*2,hexp.x-7,hexp.y-7,2,2)
+
+
+	--draw selected hex
+	hexp=get_hexp()
+ if(hexp)spr(3+flr(sin(t()*2)+1)*2,hexp.x-7,hexp.y-7,2,2)
+
 	camera()
-	
+
+	--draw mouse
 	spr(15,mx,my)
 	--debug
-	print(dist(te.x,te.y,cmx,cmy),5,11,1)
-	--print(cam_x,120,5,1)
-	--print(cam_y,120,11,1)
-	--print(mx,5,5,1)
-	--print(my,5,11,1)
-	--print(cmx,105,5,1)
-	--print(cmy,105,11,1)
-	--print(round(hexp.q-0.01),60,5,1)
---	print(hexp.q,70,5,1)
-	--print(round(hexp.r),60,11,1)
-	--print(hexp.r,70,11,1)
+	do_debug()
 end
 -->8
 function log(t,over)
 	printh(t,"log",over or false)
 end
 
+function do_debug()
+	draw_debug()
+end
+
+function draw_debug()
+	local y=8
+	for txt in all(debug) do
+		print(txt,5,y,8)
+		y+=6
+	end
+end
+
 function dist(fx,fy,tx,ty)
 	--pythagorean distance between two points
-	return sqrt((fx-tx)^2+(fy-ty)^2)
+	return (fx-tx)^2+(fy-ty)^2
 end
 
 __gfx__
